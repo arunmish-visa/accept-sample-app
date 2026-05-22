@@ -1,20 +1,35 @@
 <?php
     session_start();
     $newURL="index.php";
+    
+    // Handle form submission
 	if(isset($_POST['submit'])) 
 	{
+		$customerId = $_POST['form-username'];
+		
+		// Store authenticated customer ID in server-side session
+		$_SESSION['authenticated_cpid'] = $customerId;
+
 		if(isset($_POST['cookieCheck'])){
-			setcookie("cpid",$_POST['form-username'], time() + (86400*7), "/");
-			header('Location: '.$newURL);
+			setcookie("cpid", $customerId, time() + (86400*7), "/");
 		}
 		else{
-			setcookie("temp_cpid",$_POST['form-username'], 0, "/");
-			header('Location: '.$newURL);
+			setcookie("temp_cpid", $customerId, 0, "/");
 		}
+		
+		header('Location: '.$newURL);
+		exit;
 	}
 
-	if(isset($_COOKIE['cpid'])){
+	// Check if user is authenticated via server-side session
+	if(isset($_SESSION['authenticated_cpid'])){
 		header('Location: '.$newURL);
+		exit;
+	}
+	
+	if(isset($_COOKIE['cpid']) && !isset($_SESSION['authenticated_cpid'])){
+		setcookie("cpid", "", time() - 3600, "/");
+		setcookie("temp_cpid", "", time() - 3600, "/");
 	}
 ?>
 <!DOCTYPE html>

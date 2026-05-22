@@ -1,5 +1,13 @@
 <?php
 	session_start();
+	
+	// Security: Verify user is authenticated via server-side session
+	if(!isset($_SESSION['authenticated_cpid'])){
+		// No valid session - redirect to login
+		header('Location: login.php');
+		exit;
+	}
+	
 	include 'getToken.php';
 	include 'generateCardinalJWT.php';
 	if ($response->messages->resultCode != "Ok") {
