@@ -8,6 +8,11 @@
 		exit;
 	}
 	
+	// Security: Generate CSRF token for form submissions
+	if(!isset($_SESSION['csrf_token'])){
+		$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+	}
+	
 	include 'getToken.php';
 	include 'generateCardinalJWT.php';
 	if ($response->messages->resultCode != "Ok") {
@@ -414,6 +419,7 @@
 <body style=" background: url('scripts/background.png'); padding-top: 50px;">
 	
 	<input type='hidden' id='cardinalRequestJwt' value='<?php echo $cardinalRequestJwt; ?>'>
+	<input type='hidden' id='csrfToken' value='<?php echo $_SESSION['csrf_token']; ?>'>
 	
 	<div class="container-fluid" style="width: 100%; margin: 0; padding:0">
 		

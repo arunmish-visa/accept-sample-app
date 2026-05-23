@@ -1,4 +1,32 @@
 <?php
+session_start();
+
+// Security: Verify user is authenticated via server-side session
+if(!isset($_SESSION['authenticated_cpid'])){
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized', 'message' => 'Authentication required']);
+    exit;
+}
+
+// Security: Validate that authenticated user owns the profile
+$authenticatedCustomerId = $_SESSION['authenticated_cpid'];
+$requestedCustomerId = $_POST['customerProfileId'];
+
+if($authenticatedCustomerId !== $requestedCustomerId){
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Forbidden', 'message' => 'You do not have permission to use this profile']);
+    exit;
+}
+
+// Security: Validate CSRF token
+if(!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']){
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Forbidden', 'message' => 'Invalid CSRF token']);
+    exit;
+}
 
 $transRequestXmlStr=<<<XML
 <?xml version="1.0" encoding="UTF-8"?>
