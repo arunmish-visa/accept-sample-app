@@ -1,4 +1,30 @@
 <?php
+session_start();
+
+// Security: Verify user is authenticated via server-side session
+if(!isset($_SESSION['authenticated_cpid'])){
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized', 'message' => 'Authentication required']);
+    exit;
+}
+
+// Security: Validate CSRF token
+if(!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']){
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Forbidden', 'message' => 'Invalid CSRF token']);
+    exit;
+}
+
+// Security: Validate amount is reasonable (prevent money laundering and abuse)
+$amount = floatval($_POST['amount']);
+if($amount <= 0 || $amount > 10000){
+    http_response_code(400);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Bad Request', 'message' => 'Invalid transaction amount. Amount must be between $0.01 and $10,000.00']);
+    exit;
+}
 
 $transRequestXmlStr=<<<XML
 <?xml version="1.0" encoding="UTF-8"?>
