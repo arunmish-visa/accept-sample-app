@@ -1,4 +1,13 @@
 <?php
+session_start();
+
+// Security: Verify user is authenticated via server-side session
+if(!isset($_SESSION['authenticated_cpid'])){
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized', 'message' => 'Authentication required']);
+    exit;
+}
 
 // Validation URL is passed in the request
 // Sandbox is https://apple-pay-gateway-cert.apple.com/paymentservices/startSession 

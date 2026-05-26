@@ -1,4 +1,14 @@
 <?php
+session_start();
+
+// Security: Verify user is authenticated via server-side session
+if(!isset($_SESSION['authenticated_cpid'])){
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized', 'message' => 'Authentication required']);
+    exit;
+}
+
 error_reporting(E_ERROR);
 
 ini_set("log_errors", 1);
@@ -28,11 +38,10 @@ $transactionKey = getenv("TRANSACTION_KEY");
 
 $xml->merchantAuthentication->addChild('name', $loginId);
 $xml->merchantAuthentication->addChild('transactionKey', $transactionKey);
-if (isset($_COOKIE['cpid'])) {
-    $cpid = $_COOKIE['cpid'];
-} else if (isset($_COOKIE['temp_cpid'])) {
-    $cpid = $_COOKIE['temp_cpid'];
-}
+
+// Security: Read customer profile ID from server-side session (not user-controllable cookie)
+// This prevents authenticated attackers from accessing other users' profiles by modifying the cookie
+$cpid = $_SESSION['authenticated_cpid'];
 
 $xml->customerProfileId = $cpid;
 $xml->hostedProfileSettings->setting[0]->addChild('settingValue', curPageURL()."return.html");

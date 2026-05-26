@@ -7,6 +7,9 @@
 	{
 		$customerId = $_POST['form-username'];
 		
+		// Security: Regenerate session ID after authentication to prevent session fixation attacks
+		session_regenerate_id(true);
+		
 		// Store authenticated customer ID in server-side session
 		$_SESSION['authenticated_cpid'] = $customerId;
 
