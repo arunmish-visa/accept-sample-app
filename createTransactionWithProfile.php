@@ -9,24 +9,56 @@ if(!isset($_SESSION['authenticated_cpid'])){
     exit;
 }
 
-// Security: Validate that authenticated user owns the profile
-$authenticatedCustomerId = $_SESSION['authenticated_cpid'];
-$requestedCustomerId = $_POST['customerProfileId'];
+// SAMPLE ONLY:
+// Customer Profile IDs and Payment Profile IDs are issued by Authorize.Net
+// and are short numeric strings. In a production application you would
+// derive these from the authenticated user's profile in your own datastore,
+// not from POST. The pattern below shows the minimum input-validation shape
+// (filter_input with a digits-only regex + length cap).
+$customerProfileId = filter_input(INPUT_POST, 'customerProfileId',
+    FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^\d{1,13}$/']]);
+$paymentProfileId  = filter_input(INPUT_POST, 'paymentProfileId',
+    FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^\d{1,13}$/']]);
+if (!$customerProfileId || !$paymentProfileId) {
+    http_response_code(400);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Bad Request', 'message' => 'Invalid customerProfileId / paymentProfileId.']);
+    exit;
+}
 
-if($authenticatedCustomerId !== $requestedCustomerId){
+// Security: Validate that authenticated user owns the profile
+// (Compares the validated customerProfileId against the session-bound CPID.
+// In production, derive the CPID from the authenticated user, never from POST.)
+$authenticatedCustomerId = $_SESSION['authenticated_cpid'];
+if ($authenticatedCustomerId !== $customerProfileId) {
     http_response_code(403);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Forbidden', 'message' => 'You do not have permission to use this profile']);
     exit;
 }
 
-// Security: Validate CSRF token
-if(!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']){
+// Security: Validate CSRF token (constant-time compare)
+if(!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])){
     http_response_code(403);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Forbidden', 'message' => 'Invalid CSRF token']);
     exit;
 }
+
+// SAMPLE ONLY:
+// This sample validates the posted amount for demonstration purposes.
+// In a production application, do NOT rely on the client-submitted amount.
+// Instead, calculate the amount server-side from the authenticated user's
+// cart or order. The pattern below shows the minimum input-validation
+// shape (filter_input + range check + canonical decimal form).
+$amount = filter_input(INPUT_POST, 'amount', FILTER_VALIDATE_FLOAT);
+if ($amount === false || $amount === null || $amount <= 0 || $amount > 10000) {
+    http_response_code(400);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Bad Request', 'message' => 'Invalid transaction amount. Amount must be between $0.01 and $10,000.00']);
+    exit;
+}
+$amountCanonical = number_format($amount, 2, '.', '');
 
 $transRequestXmlStr=<<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -54,9 +86,13 @@ $transactionKey = getenv("TRANSACTION_KEY");
 $transRequestXml->merchantAuthentication->addChild('name',$loginId);
 $transRequestXml->merchantAuthentication->addChild('transactionKey',$transactionKey);
 
-$transRequestXml->transactionRequest->amount=$_POST['amount'];
-$transRequestXml->transactionRequest->profile->customerProfileId=$_POST['customerProfileId'];
-$transRequestXml->transactionRequest->profile->paymentProfile->paymentProfileId=$_POST['paymentProfileId'];
+// SAMPLE ONLY:
+// Use the validated locals from above (NOT raw $_POST) when assigning into
+// the outbound XML. This guarantees the value the gate validated is the
+// exact value sent on the wire.
+$transRequestXml->transactionRequest->amount = $amountCanonical;
+$transRequestXml->transactionRequest->profile->customerProfileId = $customerProfileId;
+$transRequestXml->transactionRequest->profile->paymentProfile->paymentProfileId = $paymentProfileId;
 
 $url="https://apitest.authorize.net/xml/v1/request.api";
 
