@@ -693,8 +693,8 @@
 						<button class="AcceptUI btn btn-primary btn-lg col-md-3 col-sm-offset-1 col-sm-4 col-xs-offset-2 col-xs-8" style="font-weight: bolder; font-size: 24px; margin-top: 10px; margin-bottom: 10px" 
 							type="button" id="acceptUIPayButton"
 							data-billingAddressOptions='{"show":true, "required":true}' 
-							data-apiLoginID="3e3b5H4YLP" 
-							data-clientKey="6jZy4G5vmCEat9G3xjtNguj7DLw5NhgS4PBr4KNp7tV2tXa34E3BkdG33dcX4S84"
+							data-apiLoginID="[YOUR_API_LOGIN_ID]"
+							data-clientKey="[YOUR_PUBLIC_CLIENT_KEY]"
             						data-acceptUIFormBtnTxt="Subscribe" 
 							data-acceptUIFormHeaderTxt="Payment Information" 
 							data-responseHandler="responseHandler">

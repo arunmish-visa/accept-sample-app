@@ -106,13 +106,24 @@ function acceptJSCaller() {
   cardData.year = document.getElementById("expiryDateYY").value;
   secureData.cardData = cardData;
 
-  // The Authorize.Net Client Key is used in place of the traditional Transaction Key. The Transaction Key
-  // is a shared secret and must never be exposed. The Client Key is a public key suitable for use where
-  // someone outside the merchant might see it.
-
-  authData.clientKey =
-    "6jZy4G5vmCEat9G3xjtNguj7DLw5NhgS4PBr4KNp7tV2tXa34E3BkdG33dcX4S84";
-  authData.apiLoginID = "3e3b5H4YLP";
+  // SAMPLE ONLY:
+  // `apiLoginID` is a non-secret merchant identifier (NOT a credential like
+  // `Transaction Key`). `clientKey` is the Authorize.Net Public Client Key —
+  // it is designed to be exposed to the browser; it can ONLY be used by the
+  // issuing merchant's own Accept.js flow to mint single-use, short-lived
+  // opaque tokens for that merchant's own card data.
+  //
+  // Per README, each developer must replace these placeholders with their
+  // own per-developer sandbox values. Generate them in the Authorize.Net
+  // Sandbox Merchant Interface → Account → Security Settings →
+  //   - "API Credentials & Keys" for the apiLoginID
+  //   - "Manage Public Client Key" for the clientKey
+  //
+  // The shared-secret `Transaction Key` (which IS a credential) lives only
+  // in your server-side env-vars (`getenv("TRANSACTION_KEY")` in
+  // transactionCaller.php) and is never sent to the browser.
+  authData.clientKey = "[YOUR_PUBLIC_CLIENT_KEY]";
+  authData.apiLoginID = "[YOUR_API_LOGIN_ID]";
   secureData.authData = authData;
 
   // Pass the card number and expiration date to Accept.js for submission to Authorize.Net.
